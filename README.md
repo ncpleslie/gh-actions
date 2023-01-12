@@ -119,3 +119,55 @@ https://docs.github.com/en/actions/learn-github-actions/contexts#about-contexts
 ### Get values from previous workflow steps
 
 `needs` Contains the outputs of all jobs that are defined as a dependency of the current job. For more information, see needs context.
+
+#### Set an output value
+
+```
+build:
+    needs: ...
+    runs-on: ubuntu-latest
+    outputs:
+      script-file: ${{ steps.publish.outputs.script-file }}
+    steps:
+        ...
+      - name: Publish JS filename
+        id: publish
+        run: find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
+        ...
+```
+
+#### Get an output value in another step/job
+
+```
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+        ...
+      - name: Output filename
+        run: echo "${{ needs.build.outputs.script-file }}"
+        ...
+```
+
+## Caching
+
+https://github.com/marketplace/actions/cache
+
+The following should be used in all jobs that use the dependencies
+
+```
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        run: npm ci
+        ...
+```
