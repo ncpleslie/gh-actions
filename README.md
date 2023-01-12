@@ -171,3 +171,116 @@ jobs:
         run: npm ci
         ...
 ```
+
+## Environment Variables
+
+Environment variables can be accessed in Node through `process.env`.
+
+### Set env variables
+
+#### For all jobs
+
+```
+name: Deployment
+on:
+  push:
+    branches:
+      - main
+      - dev
+env:
+  MONGODB_DB_NAME: gha-demo
+...
+```
+
+#### Per job
+
+```
+...
+jobs:
+  test:
+    env:
+      MONGODB_CLUSTER_ADDRESS: clusterA
+      PORT: 8080
+    environment: testing
+    runs-on: ubuntu-latest
+    ...
+```
+
+#### Using env variable in workflow
+
+Using the environment variables will differ by the runner.
+
+##### Linux and MacOS
+
+Using `$ENV_NAME` or `${{ env.ENV_NAME }}`
+
+##### Windows
+
+Using `$env:ENV_NAME`
+
+```
+jobs:
+  test:
+    env:
+      MONGODB_CLUSTER_ADDRESS: clusterA
+      PORT: 8080
+    runs-on: ubuntu-latest
+    steps:
+      ...
+      - name: Run server
+        run: npm start & npx wait-on http://127.0.0.1:$PORT
+      - name: Print results
+        run: echo "Running on port: ${{ env.PORT }}"
+    ...
+```
+
+### Default environment variables
+
+https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+
+### Repo-specific secrets
+
+Repo-specific secrets can be used as values in your workflows.
+
+#### Reference a secret in your workflow
+
+```
+...
+jobs:
+  test:
+    env:
+      MONGODB_CLUSTER_ADDRESS: ${{ secrets.MONGODB_CLUSTER_ADDRESS }}
+      PORT: 8080
+    runs-on: ubuntu-latest
+    ...
+```
+
+### Environment-specific secrets and variables
+
+https://docs.github.com/en/actions/learn-github-actions/contexts#vars-context
+
+Environments (Testing, staging, etc) can be created through `Settings > Environments`.
+
+Environments can have their own stored secrets and variables so a new repo-specific secrets/variables is not needed for each environment.
+
+Variables are not secret and can be viewed and altered.
+Secrets are not visible and can only be updated.
+
+Variables could be useful for things such as addresses and ports.
+Secrets could be useful for things such as database passwords.
+
+Declaring an environment is through the `environment` key.
+
+#### Reference a environment in your job
+
+```
+...
+jobs:
+  test:
+    environment: testing
+    env:
+      MONGODB_CLUSTER_ADDRESS: ${{ secrets.MONGODB_CLUSTER_ADDRESS }}
+    ...
+```
+
+When requesting a secret/variable in the job, it will retrieve the environment value instead of an overall repo-specific value.
