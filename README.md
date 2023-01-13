@@ -172,6 +172,20 @@ jobs:
         ...
 ```
 
+```
+...
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: npm ci
+      ...
+```
+
 ## Environment Variables
 
 Environment variables can be accessed in Node through `process.env`.
@@ -284,3 +298,39 @@ jobs:
 ```
 
 When requesting a secret/variable in the job, it will retrieve the environment value instead of an overall repo-specific value.
+
+## Controlling Execution Flow
+
+### if
+
+```
+...
+      - name: Test code
+        id: run-tests
+        run: npm run test
+      - name: Upload test report
+        if: ${{ failure() && steps.run-tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test.json
+        ...
+```
+
+#### Note
+
+`${{  }}` can be ignored in `if`
+
+#### More on the `steps` context
+
+https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+
+#### More on expressions
+
+https://docs.github.com/en/actions/learn-github-actions/expressions
+
+#### Status check functions
+
+https://docs.github.com/en/actions/learn-github-actions/expressions#status-check-functions
+
+### continue-on-error
