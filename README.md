@@ -4,7 +4,7 @@ Basic notes on GitHub Actions
 
 ## Runs on - Hosted runners
 
-https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+<https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>
 
 Runner image YAML workflow label Notes
 
@@ -26,13 +26,13 @@ macOS Catalina 10.15 [deprecated] macos-10.15 Migrate to macOS-11 or macOS-12. F
 
 ## On - Events
 
-https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows
+<https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows>
 
 ### Repository Related
 
 #### on: push
 
-https://learn.microsoft.com/en-us/training/paths/automate-workflow-github-actions/
+<https://learn.microsoft.com/en-us/training/paths/automate-workflow-github-actions/>
 
 Workflow triggered hen a commit is pushed to a branch
 
@@ -40,7 +40,7 @@ Workflow triggered hen a commit is pushed to a branch
 
 #### on: pull_request, create, fork, issues, issue_comment, watch, discussion, etc
 
-https://learn.microsoft.com/en-us/training/paths/automate-workflow-github-actions/
+<https://learn.microsoft.com/en-us/training/paths/automate-workflow-github-actions/>
 
 No notes
 
@@ -70,7 +70,7 @@ Context can be accessed using the `${{}}` expression.
 
 E.g. `${{ github }}` or `${{ toJSON(github) }}`
 
-https://docs.github.com/en/actions/learn-github-actions/contexts
+<https://docs.github.com/en/actions/learn-github-actions/contexts>
 
 Context name Type Description
 
@@ -100,21 +100,21 @@ inputs object Contains the inputs of a reusable or manually triggered workflow. 
 
 ## Functions
 
-https://docs.github.com/en/enterprise-cloud@latest/actions/learn-github-actions/expressions#functions
+<https://docs.github.com/en/enterprise-cloud@latest/actions/learn-github-actions/expressions#functions>
 
 ## Artifacts
 
 ### Upload
 
-https://github.com/marketplace/actions/upload-a-build-artifact
+<https://github.com/marketplace/actions/upload-a-build-artifact>
 
 ### Download
 
-https://github.com/marketplace/actions/download-a-build-artifact
+<https://github.com/marketplace/actions/download-a-build-artifact>
 
 ## Contexts
 
-https://docs.github.com/en/actions/learn-github-actions/contexts#about-contexts
+<https://docs.github.com/en/actions/learn-github-actions/contexts#about-contexts>
 
 ### Get values from previous workflow steps
 
@@ -122,7 +122,7 @@ https://docs.github.com/en/actions/learn-github-actions/contexts#about-contexts
 
 #### Set an output value
 
-```
+```YAML
 build:
     needs: ...
     runs-on: ubuntu-latest
@@ -138,7 +138,7 @@ build:
 
 #### Get an output value in another step/job
 
-```
+```YAML
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -151,11 +151,11 @@ build:
 
 ## Caching
 
-https://github.com/marketplace/actions/cache
+<https://github.com/marketplace/actions/cache>
 
 The following should be used in all jobs that use the dependencies
 
-```
+```YAML
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -172,7 +172,7 @@ jobs:
         ...
 ```
 
-```
+```YAML
 ...
       - name: Cache dependencies
         id: cache
@@ -194,7 +194,7 @@ Environment variables can be accessed in Node through `process.env`.
 
 #### For all jobs
 
-```
+```YAML
 name: Deployment
 on:
   push:
@@ -208,7 +208,7 @@ env:
 
 #### Per job
 
-```
+```YAML
 ...
 jobs:
   test:
@@ -232,7 +232,7 @@ Using `$ENV_NAME` or `${{ env.ENV_NAME }}`
 
 Using `$env:ENV_NAME`
 
-```
+```YAML
 jobs:
   test:
     env:
@@ -250,7 +250,7 @@ jobs:
 
 ### Default environment variables
 
-https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+<https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables>
 
 ### Repo-specific secrets
 
@@ -258,7 +258,7 @@ Repo-specific secrets can be used as values in your workflows.
 
 #### Reference a secret in your workflow
 
-```
+```YAML
 ...
 jobs:
   test:
@@ -271,7 +271,7 @@ jobs:
 
 ### Environment-specific secrets and variables
 
-https://docs.github.com/en/actions/learn-github-actions/contexts#vars-context
+<https://docs.github.com/en/actions/learn-github-actions/contexts#vars-context>
 
 Environments (Testing, staging, etc) can be created through `Settings > Environments`.
 
@@ -287,7 +287,7 @@ Declaring an environment is through the `environment` key.
 
 #### Reference a environment in your job
 
-```
+```YAML
 ...
 jobs:
   test:
@@ -303,7 +303,7 @@ When requesting a secret/variable in the job, it will retrieve the environment v
 
 ### if
 
-```
+```YAML
 ...
       - name: Test code
         id: run-tests
@@ -323,14 +323,93 @@ When requesting a secret/variable in the job, it will retrieve the environment v
 
 #### More on the `steps` context
 
-https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+<https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context>
 
 #### More on expressions
 
-https://docs.github.com/en/actions/learn-github-actions/expressions
+<https://docs.github.com/en/actions/learn-github-actions/expressions>
 
 #### Status check functions
 
-https://docs.github.com/en/actions/learn-github-actions/expressions#status-check-functions
+<https://docs.github.com/en/actions/learn-github-actions/expressions#status-check-functions>
 
 ### continue-on-error
+
+Using `continue-on-error` to run a step when a previous step(s) has failed.
+
+This could be similar to the previous `if: ${{ failure() }}`.
+`if` will display that a job failed (red failure icon) if you are using the above `if` method to continue after a failure.
+
+`continue-on-error` will display a successful job icon if a previous step failed.
+
+```YAML
+...
+      - name: Test code
+        id: run-tests
+        run: npm run test
+      - name: Upload test report
+        continue-on-error: true
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test.json
+        ...
+```
+
+## Matrix
+
+Matrix allows you to run the job multiple times for each value in the matrix. A matrix could have a length of 1, in which case, the job will only run once.
+
+```YAML
+...
+on: push
+jobs:
+  build:
+    strategy:
+      matrix:
+        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Get code
+      - uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      ...
+```
+
+### Include/Exclude
+
+```YAML
+...
+jobs:
+  build:
+    strategy:
+      matrix:
+        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - node-version: 18
+            operating-system: ubuntu-latest
+        exclude:
+          - node-version: 12
+            operating-system: windows-latest
+    runs-on: ${{ matrix.os }}
+    ...
+```
+
+## Reusable workflows
+
+You can reference another workflow to create reusable workflows.
+
+```YAML
+...
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-demo.yml
+    ...
+```
+
+The reusable workflow should be run with `workflow_call` in the `on` section.
