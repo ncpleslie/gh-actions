@@ -413,3 +413,96 @@ You can reference another workflow to create reusable workflows.
 ```
 
 The reusable workflow should be run with `workflow_call` in the `on` section.
+
+## Inputs
+
+<https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions>
+
+### Using workflow
+
+```YAML
+...
+on:
+  workflow_call:
+    inputs:
+      artifact-name:
+        description: The name of the deployable artifact
+        required: false
+        default: dist
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/download-artifact@v3
+        with:
+          name: $ {{ inputs.artifact-name }}
+      ...
+```
+
+### Providing workflow
+
+```YAML
+...
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-demo.yml
+    with:
+      artifact-name: dist-files
+    ...
+```
+
+### Providing secrets
+
+```YAML
+...
+  deploy:
+    needs: build
+    uses: ./.github/workflows/reusable-demo.yml
+    secrets:
+      some-secret: ${{ secrets.some-secret }}
+    ...
+```
+
+## Outputs
+
+### Providing outputs
+
+```YAML
+name: Reusable
+on:
+  workflow_call:
+    outputs:
+      result:
+        description: The result of the deployment operation
+        value: ${{ jobs.deploy.outputs.outcome }}
+jobs:
+  deploy:
+    outputs:
+      outcome: ${{ steps.step-result.outputs.step-result }}
+    runs-on: ubuntu-latest
+    steps:
+      ...
+      - name: Set result output
+        id: step-result
+        run: echo "step-result=success" >> $GITHUB_OUTPUT
+    ...
+```
+
+### Using outputs
+
+The following should run AFTER the previous workflow has finished.
+
+```YAML
+...
+jobs:
+  ...
+  print-deploy-result:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print deploy out
+        run: echo "${{ needs.deploy.outputs.result }}"
+```
