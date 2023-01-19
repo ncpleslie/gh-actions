@@ -506,3 +506,51 @@ jobs:
       - name: Print deploy out
         run: echo "${{ needs.deploy.outputs.result }}"
 ```
+
+## Containers and Docker
+
+The workflow can run in your specified container so all the following steps will run inside that container.
+See <https://hub.docker.com/> for a list of more containers.
+`env` values are provided to the container, if the container needs them.
+
+```YAML
+...
+jobs:
+  test:
+    environment: testing
+    runs-on: ubuntu-latest
+    container:
+      image: node:16
+      env:
+        some-value: value
+    ...
+```
+
+### Service containers
+
+An example of a service container could be for creating a DB that exists for testing purposes only.
+
+E.g. Spinning up a test DB instance that the pipeline could use to test against during pushes to the repo.
+
+```YAML
+...
+jobs:
+  test:
+    environment: testing
+    runs-on: ubuntu-latest
+    env:
+      MONGODB_CONNECTION_PROTOCOL: mongodb
+      MONGODB_CLUSTER_ADDRESS: 127.0.0.1:27017 # This address:port must be used if this is not running in a container. This could be 'mongodb' if container was node.
+      MONGODB_USERNAME: root
+      MONGODB_PASSWORD: example
+      PORT: 8080
+    services:
+      mongodb:
+        image: mongo
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: example
+      ...
+```
