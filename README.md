@@ -813,3 +813,49 @@ jobs:
 ```
 
 Note: If using an action from INSIDE your repo, ensure you have used `actions/checkout` to retrieve that action.
+
+## Security
+
+### Script injection
+
+- A value, set outside a workflow, is used in a workflow
+- E.g. Issue title used in a workflow shell command
+- Workflow / command behaviour could be changed
+
+Set user-entered data as an environment variable to circumvent this
+
+### Malicious third-party actions
+
+- Actions can perform any logic, including potentially malicious logic
+- E.g. A third-party action that reads and exports your secrets
+- Only use trusted actions and inspect code of unknown / untrusted authors
+
+### Permission issues
+
+<https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs>
+
+- Consider avoiding overly permissive permissions
+- E.g. Only allow checking out code ('read-only')
+- Actions supports fine-grained permissions control
+
+By default, workflows run with "full" permissions.
+
+Setting permissions can be on a workflow level or job level.
+
+```YML
+...
+on:
+  issues:
+    types:
+    - opened
+permissions:
+  issues: write
+```
+
+## Security hardening
+
+### OpenID Connection
+
+<https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect>
+
+For providing specific, short-lived authentication and authorisation into third-party (Azure, AWS, GCP) services.
