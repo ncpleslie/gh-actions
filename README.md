@@ -554,3 +554,262 @@ jobs:
           MONGO_INITDB_ROOT_PASSWORD: example
       ...
 ```
+
+## Creating actions
+
+<https://docs.github.com/en/actions/creating-actions>
+
+### Composite actions
+
+<https://docs.github.com/en/actions/creating-actions/creating-a-composite-action>
+
+- Combine multiple existing workflow steps into one single action
+- Combine `run` commands and `uses` commands
+- Allows for reusing shared steps
+
+See [./Docker Examples](./Docker%20examples/.github/actions/) for an example
+
+#### Example composite action
+
+```YAML
+name: "Get and cache dependencies"
+description: "Get the dependencies and cache them."
+runs:
+  using: "composite"
+  steps:
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm ci
+      shell: bash
+...
+```
+
+#### Inputs with composite actions
+
+```YAML
+name: "Get and cache dependencies"
+description: "Get the dependencies and cache them."
+inputs:
+  caching:
+    description: 'Whether to cache dependencies or not'
+    required: false
+    default: 'true'
+runs:
+  using: "composite"
+  steps:
+    - name: Cache dependencies
+      if: inputs.caching == 'true'
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true' && inputs.caching != 'true'
+      run: npm ci
+      shell: bash
+...
+```
+
+#### Outputs with composite actions
+
+```YAML
+name: "Get and cache dependencies"
+description: "Get the dependencies and cache them."
+inputs:
+  caching:
+    description: 'Whether to cache dependencies or not'
+    required: false
+    default: 'true'
+outputs:
+  used-cache:
+    description: 'Whether cache was used'
+    value: ${{ steps.install.outputs.cache }}
+runs:
+  using: "composite"
+  steps:
+    - name: Cache dependencies
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    - name: Install dependencies
+      id: install
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        npm ci
+        echo "cache=${{ inputs.caching }}" >> $GITHUB_OUTPUT
+      shell: bash
+...
+```
+
+### JavaScript actions
+
+<https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action>
+
+```YAML
+name: "Deploy to AWS S3"
+description: "Deploy a static website to AWS S3"
+runs:
+  using: "node16"
+  main: "main.js"
+```
+
+#### Custom JavaScript
+
+JavaScript actions require NPM packages to function and call various processes.
+E.g. `console.log` becomes `core.notice`
+
+```JavaScript
+const core = require('@actions/core')
+const github = require('@actions/github')
+const exec = require('@actions/exec')
+
+function run() {
+    core.notice('Hello from my custom JavaScript Action!')
+}
+
+run()
+```
+
+Note: Ensure you PUSH your `node_modules` folder as GitHub will not grab the packages for you.
+Remember, `.gitignore` could be preventing the `dist` path from being uploaded. Ensure `.gitignore` prevents `/dist` instead of `dist`.
+
+#### JavaScript Inputs
+
+```YAML
+name: "Deploy to AWS S3"
+description: "Deploy a static website to AWS S3"
+inputs:
+  bucket:
+    description: 'The s3 bucket name',
+    required: true
+  bucket-region:
+    description: 'The region of the bucket',
+    required: false
+    default: 'us-east-1'
+  dist-folder:
+    description: 'The folder containing the deployable files'
+    required: true
+runs:
+  using: "node16"
+  main: "main.js"
+```
+
+#### Using inputs in JavaScript
+
+```JavaScript
+...
+// Get inputs
+const bucket = core.getInput('bucket', { required: true })
+const bucketRegion = core.getInput('bucket-region', { required: true })
+const distFolder = core.getInput('dist-folder', { required: true })
+...
+```
+
+#### Calling CLI commands from code
+
+```JavaScript
+exec.exec(`aws s3 sync ${distFolder} ${s3Uri} --region ${bucketRegion}`)
+```
+
+#### Setting env for code
+
+See other examples on how to set `env` values
+
+#### JavaScript Outputs
+
+```YAML
+name: "Deploy to AWS S3"
+description: "Deploy a static website to AWS S3"
+inputs:
+  bucket:
+    description: 'The s3 bucket name'
+    required: true
+  bucket-region:
+    description: 'The region of the bucket'
+    required: false
+    default: 'us-east-1'
+  dist-folder:
+    description: 'The folder containing the deployable files'
+    required: true
+outputs:
+  website-url:
+    description: 'The URL of the deployed website'
+runs:
+  using: "node16"
+  main: "main.js"
+```
+
+#### Providing outputs with JavaScript
+
+```JavaScript
+const websiteUrl = `http://${bucket}.s3-website-${bucketRegion}.amazonaws.com`
+core.setOutput('website-url', websiteUrl)
+```
+
+### Docker actions
+
+<https://docs.github.com/en/actions/creating-actions/creating-a-docker-container-action>
+
+```YML
+name: "Deploy to aws s3"
+description: "Deploy a static website to s3"
+inputs:
+  bucket:
+    description: "The s3 bucket name"
+    required: true
+  bucket-region:
+    description: "The region of the bucket"
+    required: false
+    default: "us-east-1"
+  dist-folder:
+    description: "The folder containing the deployable files"
+    required: true
+outputs:
+  website-url:
+    description: "The URL of the deployed website"
+runs:
+  using: "docker"
+  image: "Dockerfile" # or image on docker hub
+```
+
+### Using input values in docker
+
+All input values are provided to docker as environment value in all caps, prefixed with INPUT.
+E.g. `bucket` becomes `INPUT_BUCKET`
+
+### Getting output values in docker
+
+```Python
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as gh_output:
+        print(f'website-url={website_url}', file=gh_output)
+```
+
+## Using Custom Actions
+
+Note: Pathing is relative to the root of the application, not the path of the current workflow.
+
+Alternatively, the path could be to a repo of the action.
+
+```YAML
+...
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code
+        uses: actions/checkout@v3
+      - name: Load & cache dependencies
+        uses: ./.github/actions/cached-deps
+    ...
+```
+
+Note: If using an action from INSIDE your repo, ensure you have used `actions/checkout` to retrieve that action.
